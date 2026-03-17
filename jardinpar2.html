@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jardín Evolutivo - Plantas que Crecen + Agua Realista</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 25px;
+            border-radius: 40px;
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            border: 2px solid #ffaa33;
+            box-shadow: 0 0 30px rgba(255,200,100,0.5);
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 2px 5px black;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(20, 30, 20, 0.9);
+            padding: 15px 35px;
+            border-radius: 60px;
+            backdrop-filter: blur(10px);
+            border: 2px solid #8bc34a;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        }
+        
+        .season-btn {
+            background: none;
+            border: none;
+            color: #f0ffe0;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 50px;
+            transition: all 0.3s;
+            text-shadow: 0 2px 10px #1f3f1f;
+        }
+        
+        .season-btn.active {
+            background: #6ba86b;
+            color: #ffffaa;
+            transform: scale(1.2);
+            box-shadow: 0 0 40px #a5d6a5;
+        }
+        
+        #time-slider-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(8px);
+            border: 2px solid #ffaa33;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+            font-size: 20px;
+        }
+        
+        #timeSlider {
+            width: 200px;
+            height: 8px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #ffaa00, #2a4a7a);
+            border-radius: 10px;
+            outline: none;
+        }
+        
+        #timeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #ffffaa;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid #ff8800;
+            box-shadow: 0 0 20px #ffaa00;
+        }
+        
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 320px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 12px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(8px);
+            border: 2px solid #8bc34a;
+            z-index: 100;
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #c0e0a0;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffaa;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,60,0,0.9);
+            padding: 30px 60px;
+            border-radius: 80px;
+            font-size: 28px;
+            border: 3px solid #ffaa00;
+            box-shadow: 0 0 80px #7fb078;
+            z-index: 200;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading"><span>🌱 JARDÍN EVOLUTIVO - PLANTAS QUE CRECEN 🌱</span></div>
+    
+    <div id="info">
+        🌿 JARDÍN CON CRECIMIENTO | ÁRBOLES SEPARADOS | AGUA REALISTA 🌿
+    </div>
+    
+    <div id="stats">
+        <div class="stat">
+            <span class="stat-label">TEMPERATURA</span>
+            <span class="stat-value" id="tempValue">24°C</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">HUMEDAD</span>
+            <span class="stat-value" id="humidityValue">58%</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">ESTACIÓN</span>
+            <span class="stat-value" id="seasonEmoji">🌸</span>
+        </div>
+    </div>
+    
+    <div id="time-slider-container">
+        <span>☀️</span>
+        <input type="range" id="timeSlider" min="0" max="100" value="70">
+        <span>🌙</span>
+    </div>
+    
+    <div id="controls">
+        <button class="season-btn active" id="springBtn">🌸</button>
+        <button class="season-btn" id="summerBtn">☀️</button>
+        <button class="season-btn" id="autumnBtn">🍂</button>
+        <button class="season-btn" id="winterBtn">❄️</button>
+    </div>
+
+    <!-- Importar Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.126.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.126.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==================== CLASE DE PLANTA CON CRECIMIENTO ====================
+        class Planta {
+            constructor(tipo, x, z) {
+                this.tipo = tipo; // 'sakura', 'manzano', 'naranjo', 'limonero', 'arbusto', 'flor'
+                this.x = x;
+                this.z = z;
+                this.edad = 0; // 0 a 1
+                this.velocidadCrecimiento = 0.1 + Math.random() * 0.1;
+                this.mesh = new THREE.Group();
+                this.crearModeloBase();
+            }
+            
+            crearModeloBase() {
+                if (this.tipo === 'arbusto') {
+                    this.crearArbusto();
+                } else if (this.tipo === 'flor') {
+                    this.crearFlor();
+                } else {
+                    this.crearArbol();
+                }
+            }
+            
+            crearArbol() {
+                // Tronco
+                const alturaBase = 3;
+                const trunkGeo = new THREE.CylinderGeometry(0.5, 0.8, alturaBase, 6);
+                let colorTronco = 0x8B5A2B;
+                if (this.tipo === 'sakura') colorTronco = 0xA0522D;
+                
+                const trunkMat = new THREE.MeshStandardMaterial({ color: colorTronco, roughness: 0.8 });
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                trunk.position.y = alturaBase / 2;
+                trunk.castShadow = true;
+                trunk.receiveShadow = true;
+                trunk.userData.esTronco = true;
+                this.mesh.add(trunk);
+                
+                // Copa
+                const copaGeo = new THREE.SphereGeometry(1.2, 5);
+                let colorCopa;
+                switch(this.tipo) {
+                    case 'sakura': colorCopa = 0xFFAACC; break;
+                    case 'manzano': colorCopa = 0x7FB87F; break;
+                    case 'naranjo': colorCopa = 0x8FBC8F; break;
+                    case 'limonero': colorCopa = 0x9ACD9A; break;
+                    default: colorCopa = 0x6B8E6B;
+                }
+                const copaMat = new THREE.MeshStandardMaterial({ color: colorCopa, roughness: 0.4 });
+                const copa = new THREE.Mesh(copaGeo, copaMat);
+                copa.position.y = alturaBase + 0.5;
+                copa.castShadow = true;
+                copa.receiveShadow = true;
+                copa.userData.esCopa = true;
+                this.mesh.add(copa);
+                
+                // Ramas pequeñas
+                for (let i = 0; i < 4; i++) {
+                    const ang = (i / 4) * Math.PI * 2;
+                    const ramaGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.2);
+                    const ramaMat = new THREE.MeshStandardMaterial({ color: colorTronco });
+                    const rama = new THREE.Mesh(ramaGeo, ramaMat);
+                    rama.position.set(Math.cos(ang)*0.6, alturaBase-0.5, Math.sin(ang)*0.6);
+                    rama.rotation.z = Math.cos(ang) * 0.3;
+                    rama.rotation.x = Math.sin(ang) * 0.3;
+                    rama.castShadow = true;
+                    this.mesh.add(rama);
+                }
+                
+                this.mesh.position.set(this.x, 0, this.z);
+            }
+            
+            crearArbusto() {
+                const baseGeo = new THREE.SphereGeometry(0.8, 4);
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x5F9F5F });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                base.position.y = 0.4;
+                base.castShadow = true;
+                this.mesh.add(base);
+                
+                for (let i = 0; i < 3; i++) {
+                    const hojaGeo = new THREE.SphereGeometry(0.5);
+                    const hojaMat = new THREE.MeshStandardMaterial({ color: 0x7FB87F });
+                    const hoja = new THREE.Mesh(hojaGeo, hojaMat);
+                    hoja.position.set(0.5 * Math.sin(i), 0.8, 0.5 * Math.cos(i));
+                    hoja.castShadow = true;
+                    this.mesh.add(hoja);
+                }
+                this.mesh.position.set(this.x, 0, this.z);
+            }
+            
+            crearFlor() {
+                const talloGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.8);
+                const talloMat = new THREE.MeshStandardMaterial({ color: 0x3F9F3F });
+                const tallo = new THREE.Mesh(talloGeo, talloMat);
+                tallo.position.y = 0.4;
+                tallo.castShadow = true;
+                this.mesh.add(tallo);
+                
+                const florGeo = new THREE.SphereGeometry(0.15);
+                const florMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xFFFFFF });
+                const flor = new THREE.Mesh(florGeo, florMat);
+                flor.position.y = 0.85;
+                flor.castShadow = true;
+                this.mesh.add(flor);
+                
+                this.mesh.position.set(this.x, 0, this.z);
+            }
+            
+            actualizarCrecimiento(delta) {
+                this.edad += delta * this.velocidadCrecimiento;
+                if (this.edad > 1) {
+                    this.edad = 0; // Reinicia el ciclo
+                }
+                
+                // Factor de crecimiento basado en seno para efecto orgánico
+                const factor = 0.7 + 0.5 * Math.sin(this.edad * Math.PI * 2);
+                
+                this.mesh.children.forEach(child => {
+                    if (child.userData.esTronco) {
+                        // El tronco crece en altura
+                        child.scale.y = factor;
+                        child.position.y = (child.geometry.parameters.height / 2) * factor;
+                    } else if (child.userData.esCopa) {
+                        // La copa crece en tamaño y se eleva
+                        child.scale.set(factor, factor, factor);
+                        child.position.y = (this.mesh.children.find(c => c.userData.esTronco)?.position.y || 3) + 0.8 * factor;
+                    } else {
+                        // Ramas y hojas escalan
+                        child.scale.set(factor, factor, factor);
+                    }
+                });
+            }
+        }
+
+        // ==================== MANAGER DE PLANTAS ====================
+        class PlantaManager {
+            constructor(scene) {
+                this.scene = scene;
+                this.plantas = [];
+            }
+            
+            crearPlantas() {
+                const tipos = ['sakura', 'manzano', 'naranjo', 'limonero', 'arbusto', 'flor'];
+                
+                // ÁRBOLES EN CUADRÍCULA SEPARADA (espaciado 6 unidades)
+                for (let i = -4; i <= 4; i++) {
+                    for (let j = -3; j <= 3; j++) {
+                        // Saltar el centro para el lago
+                        if (Math.abs(i) < 2 && Math.abs(j) < 2) continue;
+                        
+                        const x = i * 7 + (j%2)*2;
+                        const z = j * 7;
+                        const tipo = tipos[Math.floor(Math.random() * 4)]; // solo árboles
+                        
+                        const planta = new Planta(tipo, x, z);
+                        this.scene.add(planta.mesh);
+                        this.plantas.push(planta);
+                    }
+                }
+                
+                // ANILLO EXTERIOR
+                for (let i = 0; i < 24; i++) {
+                    const ang = (i / 24) * Math.PI * 2;
+                    const radio = 28;
+                    const x = Math.cos(ang) * radio;
+                    const z = Math.sin(ang) * radio;
+                    const tipo = tipos[Math.floor(Math.random() * 4)];
+                    
+                    const planta = new Planta(tipo, x, z);
+                    this.scene.add(planta.mesh);
+                    this.plantas.push(planta);
+                }
+                
+                // ARBUSTOS Y FLORES (aleatorios)
+                for (let i = 0; i < 60; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const radio = 8 + Math.random() * 20;
+                    const x = Math.cos(ang) * radio;
+                    const z = Math.sin(ang) * radio;
+                    const tipo = Math.random() > 0.5 ? 'arbusto' : 'flor';
+                    
+                    const planta = new Planta(tipo, x, z);
+                    this.scene.add(planta.mesh);
+                    this.plantas.push(planta);
+                }
+                
+                console.log(`🌱 Creadas ${this.plantas.length} plantas con sistema de crecimiento`);
+            }
+            
+            actualizarCrecimiento(delta) {
+                this.plantas.forEach(p => p.actualizarCrecimiento(delta));
+            }
+        }
+
+        // ==================== AGUA REALISTA ====================
+        class AguaManager {
+            constructor(scene) {
+                this.scene = scene;
+                this.aguaMeshes = [];
+                this.tiempo = 0;
+            }
+            
+            crearAgua() {
+                // LAGO PRINCIPAL
+                const lagoGeo = new THREE.CylinderGeometry(12, 13, 0.8, 48);
+                const lagoMat = new THREE.MeshStandardMaterial({
+                    color: 0x44AAFF,
+                    transparent: true,
+                    opacity: 0.8,
+                    emissive: 0x113355,
+                    roughness: 0.2,
+                    metalness: 0.7,
+                    emissiveIntensity: 0.3
+                });
+                
+                const lago = new THREE.Mesh(lagoGeo, lagoMat);
+                lago.position.set(0, 0.2, 0);
+                lago.receiveShadow = true;
+                this.scene.add(lago);
+                this.aguaMeshes.push(lago);
+                
+                // ARROYO
+                const puntos = [];
+                for (let i = 0; i <= 20; i++) {
+                    const t = i / 20;
+                    const x = -14 + t * 28;
+                    const z = 8 + Math.sin(t * Math.PI * 3) * 10;
+                    puntos.push(new THREE.Vector3(x, 0.2, z));
+                }
+                
+                const curva = new THREE.CatmullRomCurve3(puntos);
+                const arroyoGeo = new THREE.TubeGeometry(curva, 100, 1.8, 12, false);
+                const arroyoMat = new THREE.MeshStandardMaterial({
+                    color: 0x55BBFF,
+                    transparent: true,
+                    opacity: 0.8,
+                    emissive: 0x113366,
+                    roughness: 0.2,
+                    metalness: 0.6
+                });
+                
+                const arroyo = new THREE.Mesh(arroyoGeo, arroyoMat);
+                arroyo.receiveShadow = true;
+                this.scene.add(arroyo);
+                this.aguaMeshes.push(arroyo);
+            }
+            
+            actualizar(delta) {
+                this.tiempo += delta;
+                this.aguaMeshes.forEach(mesh => {
+                    if (mesh.material.transparent) {
+                        mesh.material.opacity = 0.75 + Math.sin(this.tiempo * 2 + mesh.position.x) * 0.15;
+                        mesh.rotation.y += 0.0005;
+                    }
+                });
+            }
+        }
+
+        // ==================== ENTORNO ====================
+        class EntornoManager {
+            constructor(scene) {
+                this.scene = scene;
+                this.sunLight = null;
+                this.stars = null;
+                this.season = 'spring';
+            }
+            
+            init() {
+                // Luz ambiental
+                this.ambientLight = new THREE.AmbientLight(0x404060);
+                this.scene.add(this.ambientLight);
+                
+                // Luz hemisférica
+                this.hemiLight = new THREE.HemisphereLight(0x88BBFF, 0x5D8C5D, 1.2);
+                this.scene.add(this.hemiLight);
+                
+                // Luz solar
+                this.sunLight = new THREE.DirectionalLight(0xFFF5E6, 1.5);
+                this.sunLight.position.set(20, 30, 15);
+                this.sunLight.castShadow = true;
+                this.sunLight.receiveShadow = true;
+                this.sunLight.shadow.mapSize.width = 2048;
+                this.sunLight.shadow.mapSize.height = 2048;
+                this.sunLight.shadow.camera.near = 0.5;
+                this.sunLight.shadow.camera.far = 100;
+                this.sunLight.shadow.camera.left = -40;
+                this.sunLight.shadow.camera.right = 40;
+                this.sunLight.shadow.camera.top = 40;
+                this.sunLight.shadow.camera.bottom = -40;
+                this.scene.add(this.sunLight);
+                
+                // Suelo
+                const sueloGeo = new THREE.CircleGeometry(80, 64);
+                const sueloMat = new THREE.MeshStandardMaterial({ color: 0x4A7A4A, roughness: 0.9 });
+                const suelo = new THREE.Mesh(sueloGeo, sueloMat);
+                suelo.rotation.x = -Math.PI / 2;
+                suelo.position.y = -0.1;
+                suelo.receiveShadow = true;
+                this.scene.add(suelo);
+                
+                // Montañas
+                for (let m = 0; m < 4; m++) {
+                    const grupo = new THREE.Group();
+                    const xOff = -40 + m * 25;
+                    
+                    const baseGeo = new THREE.ConeGeometry(6, 12, 16);
+                    const baseMat = new THREE.MeshStandardMaterial({ color: 0x6D4C3D });
+                    const base = new THREE.Mesh(baseGeo, baseMat);
+                    base.position.y = 6;
+                    grupo.add(base);
+                    
+                    const picoGeo = new THREE.ConeGeometry(3.5, 6, 8);
+                    const picoMat = new THREE.MeshStandardMaterial({ color: 0xDDDDDD });
+                    const pico = new THREE.Mesh(picoGeo, picoMat);
+                    pico.position.y = 13;
+                    grupo.add(pico);
+                    
+                    grupo.position.set(xOff, -2, -45);
+                    this.scene.add(grupo);
+                }
+                
+                // Estrellas
+                const starsGeo = new THREE.BufferGeometry();
+                const starsCount = 1000;
+                const positions = new Float32Array(starsCount * 3);
+                for (let i = 0; i < starsCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 400;
+                    positions[i+1] = (Math.random() - 0.5) * 200 + 50;
+                    positions[i+2] = (Math.random() - 0.5) * 400 - 50;
+                }
+                starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const starsMat = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.3, transparent: true, opacity: 0 });
+                this.stars = new THREE.Points(starsGeo, starsMat);
+                this.scene.add(this.stars);
+                
+                // Niebla
+                this.scene.fog = new THREE.FogExp2(0xAACCFF, 0.002);
+            }
+            
+            setSeason(season) {
+                this.season = season;
+                let skyColor, groundColor, lightColor, fogColor;
+                
+                switch(season) {
+                    case 'spring': 
+                        skyColor = 0xFFDDF0; 
+                        groundColor = 0x6D9E6D; 
+                        lightColor = 0xFFEEDD;
+                        fogColor = 0xFFDDF0;
+                        break;
+                    case 'summer': 
+                        skyColor = 0x4AB0E0; 
+                        groundColor = 0xAAC87A; 
+                        lightColor = 0xFFF0DD;
+                        fogColor = 0x4AB0E0;
+                        break;
+                    case 'autumn': 
+                        skyColor = 0x7A9FB0; 
+                        groundColor = 0xBFA06A; 
+                        lightColor = 0xFFDDBB;
+                        fogColor = 0x7A9FB0;
+                        break;
+                    case 'winter': 
+                        skyColor = 0xCCE0FF; 
+                        groundColor = 0xC0D0D0; 
+                        lightColor = 0xFFFFFF;
+                        fogColor = 0xCCE0FF;
+                        break;
+                }
+                
+                this.scene.background.setHex(skyColor);
+                if (this.scene.fog) this.scene.fog.color.setHex(fogColor);
+                this.hemiLight.groundColor.setHex(groundColor);
+                this.sunLight.color.setHex(lightColor);
+            }
+            
+            updateTime(brightness) {
+                this.sunLight.intensity = 0.3 + brightness * 1.3;
+                this.ambientLight.intensity = 0.1 + brightness * 0.5;
+                const angle = (brightness - 0.5) * Math.PI * 0.8;
+                this.sunLight.position.x = Math.cos(angle) * 40;
+                this.sunLight.position.y = Math.sin(angle) * 25 + 15;
+                
+                if (this.stars) {
+                    this.stars.material.opacity = 1 - brightness;
+                }
+                
+                if (this.scene.fog) {
+                    this.scene.fog.density = 0.001 + (1 - brightness) * 0.006;
+                }
+            }
+        }
+
+        // ==================== ELEMENTOS DECORATIVOS ====================
+        class DecoracionesManager {
+            constructor(scene) {
+                this.scene = scene;
+            }
+            
+            crearTodo() {
+                this.crearPuente();
+                this.crearFaroles();
+                this.crearCriaturas();
+                this.crearPiedrasYFlores();
+            }
+            
+            crearPuente() {
+                const grupo = new THREE.Group();
+                
+                // Arco
+                for (let i = 0; i < 20; i++) {
+                    const t = i / 19;
+                    const ang = t * Math.PI;
+                    const x = (t - 0.5) * 10;
+                    const y = Math.sin(ang) * 3;
+                    
+                    const pilarGeo = new THREE.BoxGeometry(0.5, 0.5, 2.5);
+                    const pilarMat = new THREE.MeshStandardMaterial({ color: 0xFFAA33, emissive: 0x332200 });
+                    const pilar = new THREE.Mesh(pilarGeo, pilarMat);
+                    pilar.position.set(x, y + 0.6, 0);
+                    pilar.castShadow = true;
+                    grupo.add(pilar);
+                }
+                
+                // Tablones
+                for (let i = -4.5; i <= 4.5; i+=0.9) {
+                    const plankGeo = new THREE.BoxGeometry(1.0, 0.15, 3.5);
+                    const plankMat = new THREE.MeshStandardMaterial({ color: 0xCCAA88 });
+                    const plank = new THREE.Mesh(plankGeo, plankMat);
+                    plank.position.set(i, 0.4, 0);
+                    plank.castShadow = true;
+                    grupo.add(plank);
+                }
+                
+                grupo.position.set(-5, 0.2, 12);
+                grupo.rotation.y = -0.3;
+                this.scene.add(grupo);
+            }
+            
+            crearFaroles() {
+                const pos = [[-15, 2, 15], [18, 3, -8], [-8, 4, -18], [22, 2, 12], [-20, 5, -10]];
+                
+                pos.forEach((p, i) => {
+                    const grupo = new THREE.Group();
+                    
+                    const baseGeo = new THREE.CylinderGeometry(0.5, 0.6, 0.7);
+                    const baseMat = new THREE.MeshStandardMaterial({ color: 0xCCAA88 });
+                    const base = new THREE.Mesh(baseGeo, baseMat);
+                    base.position.y = 0.35;
+                    grupo.add(base);
+                    
+                    const posteGeo = new THREE.CylinderGeometry(0.15, 0.15, 4.5);
+                    const posteMat = new THREE.MeshStandardMaterial({ color: 0xCCAA88 });
+                    const poste = new THREE.Mesh(posteGeo, posteMat);
+                    poste.position.y = 2.6;
+                    grupo.add(poste);
+                    
+                    const farolGeo = new THREE.OctahedronGeometry(0.7);
+                    const farolMat = new THREE.MeshStandardMaterial({ color: 0xFFAA33, emissive: 0x442200 });
+                    const farol = new THREE.Mesh(farolGeo, farolMat);
+                    farol.position.y = 4.8;
+                    grupo.add(farol);
+                    
+                    const luz = new THREE.PointLight(0xFFAA33, 1.5, 20);
+                    luz.position.set(0, 4.8, 0);
+                    grupo.add(luz);
+                    
+                    grupo.position.set(p[0], p[1], p[2]);
+                    this.scene.add(grupo);
+                });
+            }
+            
+            crearCriaturas() {
+                // Luciérnagas
+                for (let i = 0; i < 50; i++) {
+                    const glowGeo = new THREE.SphereGeometry(0.1);
+                    const glowMat = new THREE.MeshStandardMaterial({ color: 0xFFFFAA, emissive: 0xFFAA00, emissiveIntensity: 3 });
+                    const glow = new THREE.Mesh(glowGeo, glowMat);
+                    glow.position.set(
+                        (Math.random() - 0.5) * 50,
+                        1 + Math.random() * 8,
+                        (Math.random() - 0.5) * 50
+                    );
+                    glow.userData = { speed: 0.2 + Math.random()*0.5, offset: Math.random()*10 };
+                    this.scene.add(glow);
+                }
+                
+                // Pájaros
+                for (let i = 0; i < 12; i++) {
+                    const pajaro = new THREE.Group();
+                    
+                    const cuerpoGeo = new THREE.SphereGeometry(0.3);
+                    const cuerpoMat = new THREE.MeshStandardMaterial({ color: 0x884422 });
+                    const cuerpo = new THREE.Mesh(cuerpoGeo, cuerpoMat);
+                    cuerpo.scale.set(1, 0.6, 0.8);
+                    pajaro.add(cuerpo);
+                    
+                    pajaro.position.set(
+                        (Math.random() - 0.5) * 60,
+                        15 + Math.random() * 10,
+                        (Math.random() - 0.5) * 60
+                    );
+                    
+                    pajaro.userData = { vel: 0.05 + Math.random()*0.1, ang: Math.random()*6 };
+                    this.scene.add(pajaro);
+                }
+            }
+            
+            crearPiedrasYFlores() {
+                // Piedras
+                for (let i = 0; i < 60; i++) {
+                    const geo = new THREE.DodecahedronGeometry(0.3 + Math.random()*0.8);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+                    const piedra = new THREE.Mesh(geo, mat);
+                    const ang = Math.random() * 6.28;
+                    const r = 6 + Math.random() * 30;
+                    piedra.position.set(Math.cos(ang)*r, 0.1, Math.sin(ang)*r);
+                    piedra.castShadow = true;
+                    this.scene.add(piedra);
+                }
+            }
+        }
+
+        // ==================== UI MANAGER ====================
+        class UIManager {
+            constructor(app) {
+                this.app = app;
+                this.tempEl = document.getElementById('tempValue');
+                this.humEl = document.getElementById('humidityValue');
+                this.seasonEmoji = document.getElementById('seasonEmoji');
+                this.slider = document.getElementById('timeSlider');
+                this.loading = document.getElementById('loading');
+                
+                this.initUI();
+                setTimeout(() => {
+                    this.loading.style.opacity = '0';
+                    setTimeout(() => this.loading.style.display = 'none', 500);
+                }, 800);
+            }
+            
+            initUI() {
+                this.slider.addEventListener('input', (e) => {
+                    this.app.setTimeOfDay(parseInt(e.target.value));
+                    this.updateStats();
+                });
+                
+                document.getElementById('springBtn').addEventListener('click', () => this.setSeason('spring', '🌸'));
+                document.getElementById('summerBtn').addEventListener('click', () => this.setSeason('summer', '☀️'));
+                document.getElementById('autumnBtn').addEventListener('click', () => this.setSeason('autumn', '🍂'));
+                document.getElementById('winterBtn').addEventListener('click', () => this.setSeason('winter', '❄️'));
+                
+                this.updateStats();
+            }
+            
+            setSeason(season, emoji) {
+                document.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(season + 'Btn').classList.add('active');
+                this.app.setSeason(season);
+                this.seasonEmoji.textContent = emoji;
+                this.updateStats();
+            }
+            
+            updateStats() {
+                const b = this.app.timeOfDay / 100;
+                const baseTemp = { spring: 20, summer: 32, autumn: 16, winter: 5 }[this.app.season];
+                const baseHum = { spring: 70, summer: 45, autumn: 72, winter: 80 }[this.app.season];
+                
+                this.tempEl.textContent = Math.round(baseTemp + (b-0.5)*12) + '°C';
+                this.humEl.textContent = Math.round(baseHum + (Math.random()*10-5)) + '%';
+            }
+        }
+
+        // ==================== APP PRINCIPAL ====================
+        class App {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0xAACCFF);
+                
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+                this.camera.position.set(30, 20, 40);
+                this.camera.lookAt(0, 2, 0);
+                
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                document.body.appendChild(this.renderer.domElement);
+                
+                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.maxPolarAngle = Math.PI / 2.2;
+                this.controls.maxDistance = 120;
+                this.controls.target.set(0, 2, 0);
+                
+                // Inicializar managers
+                this.entorno = new EntornoManager(this.scene);
+                this.agua = new AguaManager(this.scene);
+                this.plantas = new PlantaManager(this.scene);
+                this.decoraciones = new DecoracionesManager(this.scene);
+                this.ui = new UIManager(this);
+                
+                this.clock = new THREE.Clock();
+                this.timeOfDay = 70;
+                this.season = 'spring';
+                
+                this.init();
+            }
+            
+            init() {
+                this.entorno.init();
+                this.agua.crearAgua();
+                this.plantas.crearPlantas();
+                this.decoraciones.crearTodo();
+                this.entorno.setSeason(this.season);
+            }
+            
+            setSeason(s) { 
+                this.season = s; 
+                this.entorno.setSeason(s); 
+            }
+            
+            setTimeOfDay(v) { this.timeOfDay = v; }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                const delta = this.clock.getDelta();
+                const tiempo = performance.now() / 1000;
+                
+                // Actualizar crecimiento de plantas (¡NUEVO!)
+                this.plantas.actualizarCrecimiento(delta);
+                
+                // Actualizar agua
+                this.agua.actualizar(delta);
+                
+                // Actualizar entorno
+                this.entorno.updateTime(this.timeOfDay / 100);
+                
+                this.controls.update();
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // Iniciar
+        const app = new App();
+        app.animate();
+        window.app = app;
+    </script>
+</body>
+</html>
