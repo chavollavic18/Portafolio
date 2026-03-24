@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Jardín Primaveral - Lago Realista con Peces Subacuáticos</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.75);
+            padding: 12px 25px;
+            border-radius: 40px;
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            border: 2px solid #ffaa33;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+        }
+        
+        #texture-status {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,40,0,0.92);
+            color: #aaffaa;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            border: 2px solid #8bc34a;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            display: flex;
+            gap: 15px;
+            pointer-events: none;
+        }
+        
+        .texture-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .dot-ok { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .dot-loading { background-color: #ffff00; box-shadow: 0 0 10px #ffff00; animation: pulseLight 1.5s infinite; }
+        
+        @keyframes pulseLight {
+            0% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.5; transform: scale(1); }
+        }
+        
+        #time-slider-container {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 20px;
+            border-radius: 40px;
+            backdrop-filter: blur(8px);
+            border: 2px solid #ffaa33;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+        
+        #timeSlider {
+            width: 160px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #ffaa00, #2a4a7a);
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        #timeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #ffffaa;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ff8800;
+        }
+        
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 20px;
+            border-radius: 40px;
+            backdrop-filter: blur(8px);
+            border: 2px solid #8bc34a;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat { display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 10px; color: #c0e0a0; }
+        .stat-value { font-size: 18px; font-weight: bold; color: #ffffaa; }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,40,0,0.98);
+            padding: 35px 70px;
+            border-radius: 70px;
+            font-size: 26px;
+            font-weight: bold;
+            border: 3px solid #8bc34a;
+            z-index: 200;
+            transition: opacity 0.6s ease;
+            text-align: center;
+            box-shadow: 0 0 120px #8bc34a;
+            pointer-events: none;
+        }
+        
+        #loading.hidden { opacity: 0; visibility: hidden; }
+        #loading small { font-size: 14px; color: #aaffaa; display: block; margin-top: 12px; }
+        
+        .fish-counter {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: rgba(0,40,80,0.88);
+            color: #aaddff;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #44aaff;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .tree-status {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(0,0,0,0.75);
+            color: #ffdd99;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #ffaa66;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            pointer-events: none;
+            font-family: monospace;
+        }
+        
+        .garden-lights-status {
+            position: absolute;
+            bottom: 160px;
+            left: 20px;
+            background: rgba(0,0,0,0.75);
+            color: #ffcc88;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            border: 1px solid #ffaa66;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        @media (max-width: 800px) {
+            #stats { right: 20px; top: 90px; }
+            #time-slider-container { bottom: 80px; right: 20px; }
+            #info { font-size: 12px; top: 10px; left: 10px; }
+            .tree-status { bottom: 140px; left: 10px; font-size: 10px; }
+            .garden-lights-status { bottom: 180px; left: 10px; font-size: 9px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        🌿 JARDÍN PRIMAVERAL 🌿
+        <small>Cargando texturas: pasto.jpg, madera.jpg, sakura.jpg, arbolverde.jpg, flor.jpg, arbusto.jpg...</small>
+    </div>
+    <div id="info">
+        🌺 JARDÍN PRIMAVERAL | LAGO REALISTA | PECES SUBACUÁTICOS | ÁRBOLES CRECEN | LUCES DE JARDÍN
+    </div>
+    <div id="texture-status">
+        <span><span class="texture-dot" id="dot-madera"></span> Madera</span>
+        <span><span class="texture-dot" id="dot-sakura"></span> Sakura</span>
+        <span><span class="texture-dot" id="dot-verde"></span> ArbolVerde</span>
+        <span><span class="texture-dot" id="dot-pasto"></span> Pasto</span>
+        <span><span class="texture-dot" id="dot-flor"></span> Flor</span>
+        <span><span class="texture-dot" id="dot-arbusto"></span> Arbusto</span>
+    </div>
+    <div id="stats">
+        <div class="stat"><span class="stat-label">🌸 JARDÍN</span><span class="stat-value">PRIMAVERA</span></div>
+        <div class="stat"><span class="stat-label">🐟 PECES</span><span class="stat-value" id="fishCount">20</span></div>
+        <div class="stat"><span class="stat-label">🌳 TAMAÑO</span><span class="stat-value" id="treeCycle">100%</span></div>
+        <div class="stat"><span class="stat-label">💡 LUCES</span><span class="stat-value" id="lightsCount">32</span></div>
+    </div>
+    <div id="time-slider-container">
+        <span>☀️</span>
+        <input type="range" id="timeSlider" min="0" max="100" value="68">
+        <span>🌙</span>
+    </div>
+    <div class="fish-counter">🐟 PECES BAJO EL AGUA: <span id="fishCountDisplay">20</span></div>
+    <div class="tree-status" id="treeStatusText">🌳 CRECIENDO → 100%</div>
+    <div class="garden-lights-status" id="lightsStatusText">💡 LUCES DE JARDÍN ACTIVAS</div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.128.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --------------------------------------------------------------
+        // 1. CONFIGURACIÓN INICIAL
+        // --------------------------------------------------------------
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.006);
+
+        const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 200);
+        camera.position.set(33, 17, 44);
+        camera.lookAt(0, 1.8, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // --------------------------------------------------------------
+        // 2. CONTROLES SUAVES CON COLISIÓN
+        // --------------------------------------------------------------
+        let targetRotY = 0, targetRotX = 0, currentRotY = 0, currentRotX = 0, zoom = 39;
+        let isDragging = false;
+        const LIMITE_PISO = 45;
+        
+        document.addEventListener('mousedown', (e) => { if (e.button === 0) isDragging = true; });
+        document.addEventListener('mouseup', () => { isDragging = false; });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                targetRotY += e.movementX * 0.005;
+                targetRotX += e.movementY * 0.005;
+                targetRotX = Math.max(-0.65, Math.min(0.75, targetRotX));
+            }
+        });
+        document.addEventListener('wheel', (e) => {
+            zoom += e.deltaY * 0.012;
+            zoom = Math.max(24, Math.min(74, zoom));
+        });
+
+        // --------------------------------------------------------------
+        // 3. ILUMINACIÓN
+        // --------------------------------------------------------------
+        const ambientLight = new THREE.AmbientLight(0x40406a, 0.68);
+        scene.add(ambientLight);
+        
+        const sunLight = new THREE.DirectionalLight(0xfff2dd, 1.35);
+        sunLight.position.set(28, 32, 18);
+        sunLight.castShadow = true;
+        sunLight.receiveShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 95;
+        sunLight.shadow.camera.left = -32;
+        sunLight.shadow.camera.right = 32;
+        sunLight.shadow.camera.top = 32;
+        sunLight.shadow.camera.bottom = -32;
+        scene.add(sunLight);
+        
+        const fillLight = new THREE.PointLight(0x88aaff, 0.52);
+        fillLight.position.set(-14, 14, -12);
+        scene.add(fillLight);
+        
+        const waterGlowLight = new THREE.PointLight(0x2288ff, 0.62);
+        waterGlowLight.position.set(0, 1.3, 0);
+        scene.add(waterGlowLight);
+        
+        const backLight = new THREE.PointLight(0xffaa66, 0.38);
+        backLight.position.set(-8, 12, -20);
+        scene.add(backLight);
+
+        // --------------------------------------------------------------
+        // 4. TEXTURAS LOCALES
+        // --------------------------------------------------------------
+        const textureStatus = { madera: false, sakura: false, arbolverde: false, pasto: false, flor: false, arbusto: false };
+        
+        function actualizarIndicadorTexturas() {
+            document.getElementById('dot-madera').className = 'texture-dot ' + (textureStatus.madera ? 'dot-ok' : 'dot-loading');
+            document.getElementById('dot-sakura').className = 'texture-dot ' + (textureStatus.sakura ? 'dot-ok' : 'dot-loading');
+            document.getElementById('dot-verde').className = 'texture-dot ' + (textureStatus.arbolverde ? 'dot-ok' : 'dot-loading');
+            document.getElementById('dot-pasto').className = 'texture-dot ' + (textureStatus.pasto ? 'dot-ok' : 'dot-loading');
+            document.getElementById('dot-flor').className = 'texture-dot ' + (textureStatus.flor ? 'dot-ok' : 'dot-loading');
+            document.getElementById('dot-arbusto').className = 'texture-dot ' + (textureStatus.arbusto ? 'dot-ok' : 'dot-loading');
+            
+            if (Object.values(textureStatus).every(v => v === true)) {
+                setTimeout(() => {
+                    const loadingDiv = document.getElementById('loading');
+                    if (loadingDiv) loadingDiv.classList.add('hidden');
+                }, 500);
+            }
+        }
+        
+        const textureLoader = new THREE.TextureLoader();
+        
+        const maderaMap = textureLoader.load('madera.jpg', () => { textureStatus.madera = true; actualizarIndicadorTexturas(); });
+        maderaMap.wrapS = THREE.RepeatWrapping;
+        maderaMap.wrapT = THREE.RepeatWrapping;
+        maderaMap.repeat.set(2, 1.5);
+        
+        const sakuraMap = textureLoader.load('sakura.jpg', () => { textureStatus.sakura = true; actualizarIndicadorTexturas(); });
+        sakuraMap.wrapS = THREE.RepeatWrapping;
+        sakuraMap.wrapT = THREE.RepeatWrapping;
+        
+        const follajeMap = textureLoader.load('arbolverde.jpg', () => { textureStatus.arbolverde = true; actualizarIndicadorTexturas(); });
+        follajeMap.wrapS = THREE.RepeatWrapping;
+        follajeMap.wrapT = THREE.RepeatWrapping;
+        
+        const pastoMap = textureLoader.load('pasto.jpg', () => { textureStatus.pasto = true; actualizarIndicadorTexturas(); });
+        pastoMap.wrapS = THREE.RepeatWrapping;
+        pastoMap.wrapT = THREE.RepeatWrapping;
+        pastoMap.repeat.set(12, 12);
+        
+        const florMap = textureLoader.load('flor.jpg', () => { textureStatus.flor = true; actualizarIndicadorTexturas(); });
+        florMap.wrapS = THREE.RepeatWrapping;
+        florMap.wrapT = THREE.RepeatWrapping;
+        
+        const arbustoMap = textureLoader.load('arbusto.jpg', () => { textureStatus.arbusto = true; actualizarIndicadorTexturas(); });
+        arbustoMap.wrapS = THREE.RepeatWrapping;
+        arbustoMap.wrapT = THREE.RepeatWrapping;
+        
+        // --------------------------------------------------------------
+        // 5. SUELO PRINCIPAL
+        // --------------------------------------------------------------
+        const sueloMaterial = new THREE.MeshStandardMaterial({ map: pastoMap, roughness: 0.82, metalness: 0.05 });
+        const sueloPlano = new THREE.Mesh(new THREE.CircleGeometry(98, 72), sueloMaterial);
+        sueloPlano.rotation.x = -Math.PI / 2;
+        sueloPlano.position.y = -0.18;
+        sueloPlano.receiveShadow = true;
+        scene.add(sueloPlano);
+        
+        const bordeLimite = new THREE.Mesh(new THREE.TorusGeometry(LIMITE_PISO - 0.5, 0.2, 32, 200), new THREE.MeshStandardMaterial({ color: 0xd4b48c, emissive: 0x442200, emissiveIntensity: 0.2 }));
+        bordeLimite.rotation.x = Math.PI / 2;
+        bordeLimite.position.y = -0.1;
+        scene.add(bordeLimite);
+        
+        // --------------------------------------------------------------
+        // 6. HIERBA
+        // --------------------------------------------------------------
+        const hierbaCount = 1800;
+        const hierbaGeometry = new THREE.BufferGeometry();
+        const hierbaPosArray = new Float32Array(hierbaCount * 3);
+        
+        for (let i = 0; i < hierbaCount; i++) {
+            const angulo = Math.random() * Math.PI * 2;
+            const radio = 8 + Math.random() * 38;
+            let x = Math.cos(angulo) * radio;
+            let z = Math.sin(angulo) * radio;
+            if (Math.hypot(x, z) < 18.5) {
+                const nuevoAngulo = angulo + Math.PI;
+                x = Math.cos(nuevoAngulo) * (18.8 + Math.random() * 5);
+                z = Math.sin(nuevoAngulo) * (18.8 + Math.random() * 5);
+            }
+            hierbaPosArray[i*3] = x;
+            hierbaPosArray[i*3+1] = 0;
+            hierbaPosArray[i*3+2] = z;
+        }
+        hierbaGeometry.setAttribute('position', new THREE.BufferAttribute(hierbaPosArray, 3));
+        const hierbaMaterial = new THREE.PointsMaterial({ color: 0x5cac3a, size: 0.12, transparent: true, opacity: 0.85 });
+        const sistemaHierba = new THREE.Points(hierbaGeometry, hierbaMaterial);
+        scene.add(sistemaHierba);
+        
+        const hierbaAltaCount = 800;
+        const hierbaAltaGeometry = new THREE.BufferGeometry();
+        const hierbaAltaPosArray = new Float32Array(hierbaAltaCount * 3);
+        for (let i = 0; i < hierbaAltaCount; i++) {
+            const angulo = Math.random() * Math.PI * 2;
+            const radio = 10 + Math.random() * 36;
+            let x = Math.cos(angulo) * radio;
+            let z = Math.sin(angulo) * radio;
+            if (Math.hypot(x, z) < 18.5) {
+                const nuevoAngulo = angulo + Math.PI;
+                x = Math.cos(nuevoAngulo) * (19 + Math.random() * 4);
+                z = Math.sin(nuevoAngulo) * (19 + Math.random() * 4);
+            }
+            hierbaAltaPosArray[i*3] = x;
+            hierbaAltaPosArray[i*3+1] = Math.random() * 0.15;
+            hierbaAltaPosArray[i*3+2] = z;
+        }
+        hierbaAltaGeometry.setAttribute('position', new THREE.BufferAttribute(hierbaAltaPosArray, 3));
+        const hierbaAltaMaterial = new THREE.PointsMaterial({ color: 0x6cad3a, size: 0.18, transparent: true, opacity: 0.9 });
+        const sistemaHierbaAlta = new THREE.Points(hierbaAltaGeometry, hierbaAltaMaterial);
+        scene.add(sistemaHierbaAlta);
+        
+        const hierbaFlorCount = 400;
+        const hierbaFlorGeometry = new THREE.BufferGeometry();
+        const hierbaFlorPosArray = new Float32Array(hierbaFlorCount * 3);
+        for (let i = 0; i < hierbaFlorCount; i++) {
+            const angulo = Math.random() * Math.PI * 2;
+            const radio = 12 + Math.random() * 32;
+            let x = Math.cos(angulo) * radio;
+            let z = Math.sin(angulo) * radio;
+            if (Math.hypot(x, z) < 19) {
+                const nuevoAngulo = angulo + Math.PI;
+                x = Math.cos(nuevoAngulo) * (19.5 + Math.random() * 3);
+                z = Math.sin(nuevoAngulo) * (19.5 + Math.random() * 3);
+            }
+            hierbaFlorPosArray[i*3] = x;
+            hierbaFlorPosArray[i*3+1] = 0.05;
+            hierbaFlorPosArray[i*3+2] = z;
+        }
+        hierbaFlorGeometry.setAttribute('position', new THREE.BufferAttribute(hierbaFlorPosArray, 3));
+        const hierbaFlorMaterial = new THREE.PointsMaterial({ color: 0xffaa66, size: 0.1, transparent: true, opacity: 0.7 });
+        const sistemaHierbaFlor = new THREE.Points(hierbaFlorGeometry, hierbaFlorMaterial);
+        scene.add(sistemaHierbaFlor);
+        
+        // --------------------------------------------------------------
+        // 7. LAGO
+        // --------------------------------------------------------------
+        const fondoArena = new THREE.Mesh(new THREE.CylinderGeometry(18.4, 18.4, 0.45, 160), new THREE.MeshStandardMaterial({ color: 0xc9a87c, roughness: 0.85 }));
+        fondoArena.position.set(0, -0.5, 0);
+        fondoArena.receiveShadow = true;
+        scene.add(fondoArena);
+        
+        const aguaGeom = new THREE.CylinderGeometry(18.1, 18.1, 0.68, 200);
+        const aguaMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x3e9ad0, emissive: 0x104c70, emissiveIntensity: 0.22,
+            metalness: 0.94, roughness: 0.16, transparent: true, opacity: 0.86,
+            clearcoat: 0.96, clearcoatRoughness: 0.07
+        });
+        const aguaCuerpo = new THREE.Mesh(aguaGeom, aguaMaterial);
+        aguaCuerpo.position.set(0, 0.06, 0);
+        aguaCuerpo.receiveShadow = true;
+        scene.add(aguaCuerpo);
+        
+        const capaBrillo = new THREE.Mesh(new THREE.CylinderGeometry(18.3, 18.3, 0.13, 180), new THREE.MeshStandardMaterial({ color: 0xc0e4ff, transparent: true, opacity: 0.38, emissive: 0x4488aa, emissiveIntensity: 0.18 }));
+        capaBrillo.position.set(0, 0.44, 0);
+        scene.add(capaBrillo);
+        
+        for (let i = 0; i < 55; i++) {
+            const anguloSpark = Math.random() * Math.PI * 2;
+            const radioSpark = 5.5 + Math.random() * 12;
+            const destello = new THREE.Mesh(new THREE.SphereGeometry(0.085, 6), new THREE.MeshStandardMaterial({ color: 0xfff5cc, emissive: 0xffaa66, emissiveIntensity: 1.15 }));
+            destello.position.set(Math.cos(anguloSpark) * radioSpark, 0.55, Math.sin(anguloSpark) * radioSpark);
+            scene.add(destello);
+        }
+        
+        // --------------------------------------------------------------
+        // 8. PECES
+        // --------------------------------------------------------------
+        const pecesArray = [];
+        const paletaPeces = [0xffaa55, 0xff7744, 0xff8844, 0xff9955, 0xffaa66, 0xdd8844];
+        
+        function generarPez(x, z, colorHex) {
+            const grupoPez = new THREE.Group();
+            const cuerpoPez = new THREE.Mesh(new THREE.SphereGeometry(0.33, 14), new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.24 }));
+            cuerpoPez.scale.set(1.52, 0.56, 0.72);
+            cuerpoPez.castShadow = true;
+            grupoPez.add(cuerpoPez);
+            
+            const cabezaPez = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12), new THREE.MeshStandardMaterial({ color: colorHex }));
+            cabezaPez.position.set(0.44, 0.02, 0);
+            cabezaPez.scale.set(0.78, 0.72, 0.72);
+            grupoPez.add(cabezaPez);
+            
+            const ojoMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const ojoDerecho = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8), ojoMat);
+            ojoDerecho.position.set(0.58, 0.13, 0.19);
+            grupoPez.add(ojoDerecho);
+            const ojoIzquierdo = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8), ojoMat);
+            ojoIzquierdo.position.set(0.58, 0.13, -0.19);
+            grupoPez.add(ojoIzquierdo);
+            
+            const aletaGeo = new THREE.ConeGeometry(0.14, 0.29, 4);
+            const aletaMat = new THREE.MeshStandardMaterial({ color: colorHex });
+            const aletaIzq = new THREE.Mesh(aletaGeo, aletaMat);
+            aletaIzq.position.set(0.12, 0.02, 0.34);
+            aletaIzq.rotation.z = -0.42;
+            grupoPez.add(aletaIzq);
+            const aletaDer = new THREE.Mesh(aletaGeo, aletaMat);
+            aletaDer.position.set(0.12, 0.02, -0.34);
+            aletaDer.rotation.z = 0.42;
+            grupoPez.add(aletaDer);
+            
+            const colaPez = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.38, 4), new THREE.MeshStandardMaterial({ color: colorHex }));
+            colaPez.position.set(-0.61, 0.02, 0);
+            colaPez.rotation.x = Math.PI / 2;
+            colaPez.rotation.z = Math.PI / 2;
+            grupoPez.add(colaPez);
+            
+            grupoPez.position.set(x, -0.12 + Math.random() * 0.62, z);
+            grupoPez.userData = {
+                velocidad: 0.0095 + Math.random() * 0.014,
+                direccion: Math.random() * Math.PI * 2,
+                offsetY: grupoPez.position.y,
+                amplitudY: 0.1 + Math.random() * 0.13,
+                frecuencia: 1.3 + Math.random() * 1.6
+            };
+            return grupoPez;
+        }
+        
+        for (let i = 0; i < 20; i++) {
+            const anguloPez = Math.random() * Math.PI * 2;
+            const radioPez = 3.5 + Math.random() * 13.8;
+            const xPos = Math.cos(anguloPez) * radioPez;
+            const zPos = Math.sin(anguloPez) * radioPez;
+            const colorPez = paletaPeces[Math.floor(Math.random() * paletaPeces.length)];
+            const nuevoPez = generarPez(xPos, zPos, colorPez);
+            scene.add(nuevoPez);
+            pecesArray.push(nuevoPez);
+        }
+        
+        // --------------------------------------------------------------
+        // 9. PUENTE Y BANCAS
+        // --------------------------------------------------------------
+        const puenteGrupo = new THREE.Group();
+        const largoPuente = 28.5;
+        const anchoPuente = 4.3;
+        
+        for (let i = -largoPuente/2; i <= largoPuente/2; i += 2.9) {
+            const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.92, 2.5, 1.45), new THREE.MeshStandardMaterial({ map: maderaMap, color: 0xbc9a6a }));
+            pilar.position.set(i, 1.2, 0);
+            pilar.castShadow = true;
+            puenteGrupo.add(pilar);
+        }
+        
+        for (let i = -largoPuente/2; i <= largoPuente/2; i += 0.68) {
+            const tablon = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.19, anchoPuente), new THREE.MeshStandardMaterial({ map: maderaMap, color: 0xc8a87a }));
+            tablon.position.set(i, 2.08, 0);
+            tablon.castShadow = true;
+            puenteGrupo.add(tablon);
+        }
+        
+        [-1, 1].forEach(lado => {
+            const offsetZ = lado * (anchoPuente/2 + 0.38);
+            for (let i = -largoPuente/2; i <= largoPuente/2; i += 1.7) {
+                const poste = new THREE.Mesh(new THREE.BoxGeometry(0.23, 1.45, 0.23), new THREE.MeshStandardMaterial({ map: maderaMap }));
+                poste.position.set(i, 2.78, offsetZ);
+                poste.castShadow = true;
+                puenteGrupo.add(poste);
+            }
+            const barandaSup = new THREE.Mesh(new THREE.BoxGeometry(largoPuente + 1, 0.14, 0.14), new THREE.MeshStandardMaterial({ map: maderaMap }));
+            barandaSup.position.set(0, 3.42, offsetZ);
+            barandaSup.castShadow = true;
+            puenteGrupo.add(barandaSup);
+        });
+        
+        function crearEscaleraConectada(signo) {
+            const grupoEscalera = new THREE.Group();
+            const extremoPuenteX = signo * (largoPuente/2 + 0.2);
+            const alturaPuente = 2.175;
+            for (let escalon = 0; escalon < 6; escalon++) {
+                const desplazamientoX = extremoPuenteX + signo * (escalon * 1.2);
+                const alturaEscalon = alturaPuente - (escalon * 0.38);
+                const anchoEscalon = anchoPuente - 0.5;
+                const peldaño = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.18, anchoEscalon), new THREE.MeshStandardMaterial({ map: maderaMap, color: 0xc2a070 }));
+                peldaño.position.set(desplazamientoX, alturaEscalon, 0);
+                peldaño.castShadow = true;
+                grupoEscalera.add(peldaño);
+            }
+            return grupoEscalera;
+        }
+        
+        puenteGrupo.add(crearEscaleraConectada(-1));
+        puenteGrupo.add(crearEscaleraConectada(1));
+        puenteGrupo.position.set(0, -0.08, 0);
+        scene.add(puenteGrupo);
+        
+        const ubicacionesBancas = [
+            { x: 14.8, z: 10.5, rot: -0.65 }, { x: 16.5, z: 2.8, rot: 0.92 }, { x: 15.2, z: -7.5, rot: 1.75 }, { x: 8.9, z: -16.0, rot: 2.25 },
+            { x: -1.2, z: -18.5, rot: 3.05 }, { x: -12.0, z: -15.8, rot: -2.28 }, { x: -18.5, z: -4.2, rot: -1.75 }, { x: -19.5, z: 5.2, rot: -1.22 },
+            { x: -15.5, z: 14.5, rot: -0.38 }, { x: -4.2, z: 19.5, rot: 0.55 }, { x: 5.5, z: 19.3, rot: 0.92 }, { x: 15.5, z: 15.6, rot: 1.28 }
+        ];
+        
+        ubicacionesBancas.forEach(pos => {
+            const bancaGrupo = new THREE.Group();
+            const asientoBanco = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.16, 1.05), new THREE.MeshStandardMaterial({ map: maderaMap, color: 0xc2a070 }));
+            asientoBanco.position.y = 0.54;
+            asientoBanco.castShadow = true;
+            bancaGrupo.add(asientoBanco);
+            const respaldoBanco = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.88, 0.13), new THREE.MeshStandardMaterial({ map: maderaMap, color: 0xc2a070 }));
+            respaldoBanco.position.set(0, 1.02, -0.48);
+            respaldoBanco.castShadow = true;
+            bancaGrupo.add(respaldoBanco);
+            for (let p = 0; p < 4; p++) {
+                const pataBanco = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 0.15), new THREE.MeshStandardMaterial({ map: maderaMap }));
+                pataBanco.position.set(p < 2 ? -1.05 : 1.05, 0.26, p % 2 === 0 ? -0.42 : 0.42);
+                pataBanco.castShadow = true;
+                bancaGrupo.add(pataBanco);
+            }
+            bancaGrupo.position.set(pos.x, 0.22, pos.z);
+            bancaGrupo.rotation.y = pos.rot;
+            scene.add(bancaGrupo);
+        });
+        
+        // --------------------------------------------------------------
+        // 10. ÁRBOLES CON CRECIMIENTO
+        // --------------------------------------------------------------
+        class ArbolConCrecimiento {
+            constructor(x, z, tipoArbol, texturaMadera, texturaHoja, colorHoja) {
+                this.grupo = new THREE.Group();
+                this.x = x;
+                this.z = z;
+                this.tipo = tipoArbol;
+                this.alturaBase = 2.3 + Math.random() * 2.9;
+                this.anchoBase = 0.48;
+                
+                this.tronco = new THREE.Mesh(new THREE.CylinderGeometry(this.anchoBase, this.anchoBase * 1.4, this.alturaBase, 9), 
+                    new THREE.MeshStandardMaterial({ map: texturaMadera, roughness: 0.68 }));
+                this.tronco.position.y = this.alturaBase / 2;
+                this.tronco.castShadow = true;
+                this.tronco.receiveShadow = true;
+                this.grupo.add(this.tronco);
+                
+                this.copa = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8), 
+                    new THREE.MeshStandardMaterial({ map: texturaHoja, roughness: 0.44, color: colorHoja }));
+                this.copa.position.y = this.alturaBase + 0.4;
+                this.copa.castShadow = true;
+                this.grupo.add(this.copa);
+                
+                const tierraBase = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.7, 0.08, 6), 
+                    new THREE.MeshStandardMaterial({ color: 0x6b4c3a, roughness: 0.9 }));
+                tierraBase.position.y = 0.04;
+                tierraBase.castShadow = true;
+                this.grupo.add(tierraBase);
+                
+                this.grupo.position.set(x, 0, z);
+                scene.add(this.grupo);
+                
+                this.escalaActual = 1;
+                this.creciendo = true;
+                this.cicloCompleto = 60;
+                this.tiempoUltimoCambio = performance.now() / 1000;
+            }
+            
+            actualizarCrecimiento(tiempoActual) {
+                const segundosTranscurridos = tiempoActual - this.tiempoUltimoCambio;
+                
+                if (segundosTranscurridos >= this.cicloCompleto) {
+                    this.creciendo = !this.creciendo;
+                    this.tiempoUltimoCambio = tiempoActual;
+                    
+                    this.copa.material.emissiveIntensity = 0.45;
+                    this.tronco.material.emissiveIntensity = 0.25;
+                    setTimeout(() => {
+                        if (this.copa.material) this.copa.material.emissiveIntensity = 0;
+                        if (this.tronco.material) this.tronco.material.emissiveIntensity = 0;
+                    }, 500);
+                }
+                
+                let targetScale;
+                if (this.creciendo) {
+                    const progreso = Math.sin((segundosTranscurridos / this.cicloCompleto) * Math.PI / 2);
+                    targetScale = 0.65 + (progreso * 0.75);
+                } else {
+                    const progreso = Math.sin((segundosTranscurridos / this.cicloCompleto) * Math.PI / 2);
+                    targetScale = 1.4 - (progreso * 0.75);
+                }
+                
+                this.escalaActual = targetScale;
+                this.grupo.scale.set(this.escalaActual, this.escalaActual, this.escalaActual);
+                return { escala: this.escalaActual, creciendo: this.creciendo };
+            }
+        }
+        
+        const bosqueArboles = [];
+        const puntosOcupados = ubicacionesBancas.map(b => ({ x: b.x, z: b.z }));
+        
+        for (let i = 0; i < 88; i++) {
+            let xPos, zPos, posValida = false;
+            for (let intento = 0; intento < 45; intento++) {
+                const anguloArbol = Math.random() * Math.PI * 2;
+                const radioArbol = 19.5 + Math.random() * 31;
+                xPos = Math.cos(anguloArbol) * radioArbol;
+                zPos = Math.sin(anguloArbol) * radioArbol;
+                let conflict = false;
+                for (let p of puntosOcupados) if (Math.hypot(xPos - p.x, zPos - p.z) < 4.0) { conflict = true; break; }
+                for (let a of bosqueArboles) if (Math.hypot(xPos - a.x, zPos - a.z) < 4.4) { conflict = true; break; }
+                if (!conflict && Math.hypot(xPos, zPos) < LIMITE_PISO - 2 && Math.hypot(xPos, zPos) > 18.8) { 
+                    posValida = true; 
+                    break; 
+                }
+            }
+            if (posValida) {
+                const esSakura = Math.random() > 0.45;
+                const colorHoja = esSakura ? 0xffb7c5 : 0x8bc34a;
+                const texturaHoja = esSakura ? sakuraMap : follajeMap;
+                const arbolNuevo = new ArbolConCrecimiento(xPos, zPos, esSakura ? 'sakura' : 'normal', maderaMap, texturaHoja, colorHoja);
+                bosqueArboles.push(arbolNuevo);
+            }
+        }
+        
+        // --------------------------------------------------------------
+        // 11. FLORES Y ARBUSTOS
+        // --------------------------------------------------------------
+        for (let i = 0; i < 220; i++) {
+            const anguloFlor = Math.random() * Math.PI * 2;
+            const radioFlor = 17.5 + Math.random() * 30;
+            const xFlor = Math.cos(anguloFlor) * radioFlor;
+            const zFlor = Math.sin(anguloFlor) * radioFlor;
+            if (Math.hypot(xFlor, zFlor) < LIMITE_PISO - 1 && Math.hypot(xFlor, zFlor) > 18.8) {
+                const florcita = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6), new THREE.MeshStandardMaterial({ map: florMap, color: [0xffaa88, 0xff77aa, 0xffaa44, 0xddaa77][Math.floor(Math.random()*4)] }));
+                florcita.position.set(xFlor, 0.09, zFlor);
+                florcita.castShadow = true;
+                scene.add(florcita);
+            }
+        }
+        
+        for (let i = 0; i < 150; i++) {
+            const anguloArbusto = Math.random() * Math.PI * 2;
+            const radioArbusto = 15 + Math.random() * 32;
+            const xArbusto = Math.cos(anguloArbusto) * radioArbusto;
+            const zArbusto = Math.sin(anguloArbusto) * radioArbusto;
+            if (Math.hypot(xArbusto, zArbusto) < LIMITE_PISO - 1 && Math.hypot(xArbusto, zArbusto) > 19) {
+                const arbusto = new THREE.Mesh(new THREE.SphereGeometry(0.55, 7), new THREE.MeshStandardMaterial({ map: arbustoMap, roughness: 0.65, color: 0x6d8c54 }));
+                arbusto.position.set(xArbusto, 0.25, zArbusto);
+                arbusto.castShadow = true;
+                scene.add(arbusto);
+            }
+        }
+        
+        for (let i = 0; i < 80; i++) {
+            const anguloRoca = Math.random() * Math.PI * 2;
+            const radioRoca = 15 + Math.random() * 32;
+            const xRoca = Math.cos(anguloRoca) * radioRoca;
+            const zRoca = Math.sin(anguloRoca) * radioRoca;
+            if (Math.hypot(xRoca, zRoca) < LIMITE_PISO - 1 && Math.hypot(xRoca, zRoca) > 19) {
+                const roca = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.45), new THREE.MeshStandardMaterial({ color: 0x8b7a6b, roughness: 0.92 }));
+                roca.position.set(xRoca, 0.05, zRoca);
+                roca.castShadow = true;
+                scene.add(roca);
+            }
+        }
+        
+        for (let m = 0; m < 8; m++) {
+            const anguloMonte = (m / 8) * Math.PI * 2;
+            const xMonte = Math.cos(anguloMonte) * 72;
+            const zMonte = Math.sin(anguloMonte) * 72;
+            const montana = new THREE.Mesh(new THREE.ConeGeometry(7.5 + Math.random() * 3.5, 15 + Math.random() * 7, 14), new THREE.MeshStandardMaterial({ color: 0x7d5e48, roughness: 0.68 }));
+            montana.position.set(xMonte, -1.8, zMonte);
+            montana.castShadow = true;
+            scene.add(montana);
+        }
+        
+        // --------------------------------------------------------------
+        // 12. LUCES DE JARDÍN PEGADAS AL PISO
+        // --------------------------------------------------------------
+        const lucesJardín = [];
+        const coloresLuces = [0xffaa66, 0xffaa88, 0xffcc88, 0xffdd99, 0xffaa77];
+        
+        // Definir posiciones para las luces alrededor del jardín
+        const posicionesLuces = [
+            // Círculo interior alrededor del lago
+            { angulo: 0, radio: 20.5, color: 0xffaa66 },
+            { angulo: Math.PI/6, radio: 20.5, color: 0xffaa66 },
+            { angulo: Math.PI/3, radio: 20.5, color: 0xffaa66 },
+            { angulo: Math.PI/2, radio: 20.5, color: 0xffaa66 },
+            { angulo: 2*Math.PI/3, radio: 20.5, color: 0xffaa66 },
+            { angulo: 5*Math.PI/6, radio: 20.5, color: 0xffaa66 },
+            { angulo: Math.PI, radio: 20.5, color: 0xffaa66 },
+            { angulo: 7*Math.PI/6, radio: 20.5, color: 0xffaa66 },
+            { angulo: 4*Math.PI/3, radio: 20.5, color: 0xffaa66 },
+            { angulo: 3*Math.PI/2, radio: 20.5, color: 0xffaa66 },
+            { angulo: 5*Math.PI/3, radio: 20.5, color: 0xffaa66 },
+            { angulo: 11*Math.PI/6, radio: 20.5, color: 0xffaa66 },
+            // Círculo exterior
+            { angulo: 0.2, radio: 28, color: 0xffcc88 },
+            { angulo: 0.8, radio: 28, color: 0xffcc88 },
+            { angulo: 1.4, radio: 28, color: 0xffcc88 },
+            { angulo: 2.0, radio: 28, color: 0xffcc88 },
+            { angulo: 2.6, radio: 28, color: 0xffcc88 },
+            { angulo: 3.2, radio: 28, color: 0xffcc88 },
+            { angulo: 3.8, radio: 28, color: 0xffcc88 },
+            { angulo: 4.4, radio: 28, color: 0xffcc88 },
+            { angulo: 5.0, radio: 28, color: 0xffcc88 },
+            { angulo: 5.6, radio: 28, color: 0xffcc88 },
+            // Alrededor del puente
+            { x: -12, z: -2, color: 0xffaa77 },
+            { x: -8, z: -1, color: 0xffaa77 },
+            { x: -4, z: 0, color: 0xffaa77 },
+            { x: 0, z: 0.5, color: 0xffaa77 },
+            { x: 4, z: 0, color: 0xffaa77 },
+            { x: 8, z: -1, color: 0xffaa77 },
+            { x: 12, z: -2, color: 0xffaa77 },
+            // Alrededor de bancas
+            { x: 15, z: 11, color: 0xffaa88 },
+            { x: 16, z: 3, color: 0xffaa88 },
+            { x: -16, z: -14, color: 0xffaa88 },
+            { x: -19, z: 5, color: 0xffaa88 },
+        ];
+        
+        // Crear cada luz de jardín pegada al piso
+        posicionesLuces.forEach((pos, idx) => {
+            let x, z;
+            if (pos.radio !== undefined) {
+                x = Math.cos(pos.angulo) * pos.radio;
+                z = Math.sin(pos.angulo) * pos.radio;
+            } else {
+                x = pos.x;
+                z = pos.z;
+            }
+            
+            // Verificar que la luz no esté dentro del lago
+            if (Math.hypot(x, z) < 18.5) return;
+            
+            const luzGrupo = new THREE.Group();
+            
+            // Base de la luz (pequeño cilindro pegado al piso)
+            const baseLuz = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.22, 0.28, 0.12, 8),
+                new THREE.MeshStandardMaterial({ color: 0x8b7355, metalness: 0.3, roughness: 0.5 })
+            );
+            baseLuz.position.y = 0.06;
+            baseLuz.castShadow = true;
+            luzGrupo.add(baseLuz);
+            
+            // Poste corto de la luz
+            const posteLuz = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.1, 0.35, 6),
+                new THREE.MeshStandardMaterial({ color: 0xcdba8a, metalness: 0.4, roughness: 0.3 })
+            );
+            posteLuz.position.y = 0.25;
+            posteLuz.castShadow = true;
+            luzGrupo.add(posteLuz);
+            
+            // Foco de la luz (esfera emisiva)
+            const focoLuz = new THREE.Mesh(
+                new THREE.SphereGeometry(0.12, 16, 16),
+                new THREE.MeshStandardMaterial({ color: pos.color, emissive: pos.color, emissiveIntensity: 0.85 })
+            );
+            focoLuz.position.y = 0.45;
+            focoLuz.castShadow = true;
+            luzGrupo.add(focoLuz);
+            
+            // Pantalla decorativa alrededor del foco
+            const pantalla = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0xffdd99, emissive: pos.color, emissiveIntensity: 0.25, transparent: true, opacity: 0.4 })
+            );
+            pantalla.position.y = 0.45;
+            luzGrupo.add(pantalla);
+            
+            luzGrupo.position.set(x, 0, z);
+            scene.add(luzGrupo);
+            
+            // Añadir un punto de luz suave alrededor de cada farol
+            const luzPuntual = new THREE.PointLight(pos.color, 0.45, 8);
+            luzPuntual.position.set(x, 0.4, z);
+            luzPuntual.castShadow = false;
+            scene.add(luzPuntual);
+            
+            lucesJardín.push({
+                grupo: luzGrupo,
+                luz: luzPuntual,
+                color: pos.color,
+                intensidadBase: 0.45,
+                x: x,
+                z: z
+            });
+        });
+        
+        // Añadir algunas luces adicionales en los senderos
+        const senderosLuces = [
+            { x: -14, z: -7 }, { x: -9, z: -3 }, { x: -4, z: -1 }, { x: 4, z: -1 }, { x: 9, z: -3 }, { x: 14, z: -5 },
+            { x: -11, z: 11 }, { x: -7, z: 9 }, { x: -3, z: 8 }, { x: 3, z: 8 }, { x: 7, z: 9 }, { x: 11, z: 11 }
+        ];
+        
+        senderosLuces.forEach(pos => {
+            if (Math.hypot(pos.x, pos.z) < 18.5) return;
+            
+            const luzPequeña = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0xffaa66, emissive: 0xff8844, emissiveIntensity: 0.7 })
+            );
+            luzPequeña.position.set(pos.x, 0.08, pos.z);
+            luzPequeña.castShadow = false;
+            scene.add(luzPequeña);
+            
+            const luzPuntualPeq = new THREE.PointLight(0xffaa66, 0.35, 5);
+            luzPuntualPeq.position.set(pos.x, 0.15, pos.z);
+            scene.add(luzPuntualPeq);
+            
+            lucesJardín.push({
+                grupo: luzPequeña,
+                luz: luzPuntualPeq,
+                color: 0xffaa66,
+                intensidadBase: 0.35,
+                x: pos.x,
+                z: pos.z
+            });
+        });
+        
+        document.getElementById('lightsCount').textContent = lucesJardín.length;
+        
+        // --------------------------------------------------------------
+        // 13. PARTÍCULAS DE POLEN
+        // --------------------------------------------------------------
+        const particulasCount = 1500;
+        const particulasGeometry = new THREE.BufferGeometry();
+        const particulasPosiciones = new Float32Array(particulasCount * 3);
+        const particulasVelocidades = [];
+        
+        for (let i = 0; i < particulasCount; i++) {
+            particulasPosiciones[i*3] = (Math.random() - 0.5) * 95;
+            particulasPosiciones[i*3+1] = Math.random() * 10 + 0.5;
+            particulasPosiciones[i*3+2] = (Math.random() - 0.5) * 90;
+            particulasVelocidades.push({
+                x: (Math.random() - 0.5) * 0.008,
+                y: 0.004 + Math.random() * 0.008,
+                z: (Math.random() - 0.5) * 0.008
+            });
+        }
+        particulasGeometry.setAttribute('position', new THREE.BufferAttribute(particulasPosiciones, 3));
+        const particulasMaterial = new THREE.PointsMaterial({ color: 0xffdd77, size: 0.18, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending });
+        const sistemaParticulas = new THREE.Points(particulasGeometry, particulasMaterial);
+        scene.add(sistemaParticulas);
+        
+        // --------------------------------------------------------------
+        // 14. CONTROL DE ILUMINACIÓN Y ANIMACIÓN
+        // --------------------------------------------------------------
+        let tiempoDia = 68;
+        const sliderTiempo = document.getElementById('timeSlider');
+        sliderTiempo.addEventListener('input', (e) => { tiempoDia = parseInt(e.target.value); });
+        
+        let tiempoInicioArboles = performance.now() / 1000;
+        let porcentajeGlobal = 100;
+        let hierbaTime = 0;
+        
+        function bucleAnimacion() {
+            requestAnimationFrame(bucleAnimacion);
+            const tiempoGlobal = performance.now() / 1000;
+            hierbaTime += 0.02;
+            
+            // Movimiento de peces
+            pecesArray.forEach(pez => {
+                pez.userData.direccion += (Math.random() - 0.5) * 0.028;
+                pez.position.x += Math.cos(pez.userData.direccion) * pez.userData.velocidad;
+                pez.position.z += Math.sin(pez.userData.direccion) * pez.userData.velocidad;
+                const distanciaCentro = Math.hypot(pez.position.x, pez.position.z);
+                if (distanciaCentro > 17.2) pez.userData.direccion += Math.PI;
+                pez.position.y = pez.userData.offsetY + Math.sin(tiempoGlobal * pez.userData.frecuencia) * pez.userData.amplitudY;
+                pez.rotation.y = pez.userData.direccion;
+                pez.rotation.z = Math.sin(tiempoGlobal * 2.6) * 0.08;
+            });
+            
+            // Actualizar crecimiento de árboles
+            let escalas = [];
+            bosqueArboles.forEach(arbol => {
+                const resultado = arbol.actualizarCrecimiento(tiempoGlobal);
+                escalas.push(resultado.escala);
+            });
+            
+            if (escalas.length > 0) {
+                const escalaPromedio = escalas.reduce((a, b) => a + b, 0) / escalas.length;
+                porcentajeGlobal = Math.round(((escalaPromedio - 0.65) / 0.75) * 100);
+                porcentajeGlobal = Math.min(100, Math.max(0, porcentajeGlobal));
+                document.getElementById('treeCycle').textContent = porcentajeGlobal + "%";
+                document.getElementById('treeStatusText').innerHTML = `🌳 ${porcentajeGlobal >= 70 ? 'GRANDES' : (porcentajeGlobal <= 30 ? 'PEQUEÑOS' : 'CRECIENDO')} → ${porcentajeGlobal}%`;
+            }
+            
+            // Efectos de agua
+            aguaCuerpo.material.opacity = 0.83 + Math.sin(tiempoGlobal * 1.4) * 0.055;
+            capaBrillo.material.opacity = 0.41 + Math.sin(tiempoGlobal * 2.2) * 0.09;
+            waterGlowLight.intensity = 0.58 + Math.sin(tiempoGlobal * 1.9) * 0.12;
+            
+            // Control de intensidad de luces de jardín según el día/noche
+            const brilloDia = tiempoDia / 100;
+            // Las luces se encienden más cuando es de noche
+            const intensidadLuces = Math.max(0.15, 1 - brilloDia * 1.2);
+            
+            lucesJardín.forEach(luz => {
+                if (luz.luz) {
+                    luz.luz.intensity = luz.intensidadBase * intensidadLuces * (0.7 + Math.sin(tiempoGlobal * 2) * 0.2);
+                }
+                if (luz.grupo && luz.grupo.children) {
+                    luz.grupo.children.forEach(child => {
+                        if (child.material && child.material.emissiveIntensity !== undefined) {
+                            child.material.emissiveIntensity = 0.6 * intensidadLuces + Math.sin(tiempoGlobal * 3) * 0.15;
+                        }
+                    });
+                }
+            });
+            
+            // Animación de partículas
+            const particulasPos = sistemaParticulas.geometry.attributes.position.array;
+            for (let i = 0; i < particulasCount; i++) {
+                particulasPos[i*3+1] += particulasVelocidades[i].y;
+                if (particulasPos[i*3+1] > 9.5) particulasPos[i*3+1] = 0.5;
+                particulasPos[i*3] += particulasVelocidades[i].x;
+                particulasPos[i*3+2] += particulasVelocidades[i].z;
+                if (Math.abs(particulasPos[i*3]) > 48) particulasPos[i*3] *= -0.9;
+                if (Math.abs(particulasPos[i*3+2]) > 45) particulasPos[i*3+2] *= -0.9;
+            }
+            sistemaParticulas.geometry.attributes.position.needsUpdate = true;
+            
+            // Animación de hierba
+            const hierbaPosAttr = sistemaHierba.geometry.attributes.position.array;
+            for (let i = 0; i < hierbaCount; i++) {
+                hierbaPosAttr[i*3+1] = Math.sin(hierbaTime + i * 0.02) * 0.03 + 0.05;
+            }
+            sistemaHierba.geometry.attributes.position.needsUpdate = true;
+            
+            const hierbaAltaPosAttr = sistemaHierbaAlta.geometry.attributes.position.array;
+            for (let i = 0; i < hierbaAltaCount; i++) {
+                hierbaAltaPosAttr[i*3+1] = Math.sin(hierbaTime * 1.3 + i * 0.015) * 0.05 + 0.12;
+            }
+            sistemaHierbaAlta.geometry.attributes.position.needsUpdate = true;
+            
+            // Control día/noche
+            sunLight.intensity = 0.35 + brilloDia * 1.18;
+            sunLight.position.x = Math.cos(brilloDia * Math.PI) * 55;
+            sunLight.position.y = Math.sin(brilloDia * Math.PI) * 38 + 14;
+            scene.background.setHSL(0.55, 0.65, 0.42 + brilloDia * 0.28);
+            
+            // Cambiar color de las luces según la hora
+            const luzColor = new THREE.Color().setHSL(0.12, 1, 0.55 + (1 - brilloDia) * 0.2);
+            
+            // Control cámara con colisión
+            currentRotY += (targetRotY - currentRotY) * 0.058;
+            currentRotX += (targetRotX - currentRotX) * 0.058;
+            let radioCam = zoom;
+            let camaraX = Math.sin(currentRotY) * Math.cos(currentRotX) * radioCam;
+            let camaraY = Math.sin(currentRotX) * radioCam + 3.8;
+            let camaraZ = Math.cos(currentRotY) * Math.cos(currentRotX) * radioCam;
+            
+            const distanciaHorizontal = Math.hypot(camaraX, camaraZ);
+            if (distanciaHorizontal > LIMITE_PISO - 2) {
+                const angulo = Math.atan2(camaraZ, camaraX);
+                camaraX = Math.cos(angulo) * (LIMITE_PISO - 2);
+                camaraZ = Math.sin(angulo) * (LIMITE_PISO - 2);
+            }
+            if (camaraY < 0.5) camaraY = 0.8;
+            
+            camera.position.set(camaraX, camaraY, camaraZ);
+            camera.lookAt(0, 1.9, 0);
+            
+            document.getElementById('fishCount').textContent = pecesArray.length;
+            document.getElementById('fishCountDisplay').textContent = pecesArray.length;
+            
+            renderer.render(scene, camera);
+        }
+        
+        bucleAnimacion();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        actualizarIndicadorTexturas();
+        
+        setTimeout(() => {
+            const loadingDiv = document.getElementById('loading');
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+        }, 3200);
+    </script>
+</body>
+</html>
